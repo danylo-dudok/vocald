@@ -32,7 +32,7 @@ The user called you with a file path, a URL, or a topic, e.g.:
 1. **Pick the two voices.** Call `list_profiles` (voicebox MCP tool, or `GET $VOICEBOX_API/profiles` — add `Authorization: Bearer $VOICEBOX_API_KEY` if the server enforces auth). If no profiles exist on a vocald server, create two kokoro presets first via the `create_profile` MCP tool (e.g. `af_bella`, `af_alloy`).
    - Use the Configuration names (HOST_A / HOST_B) if present; otherwise the first two distinct
      profiles — and tell the user which two. Note the profiles' engine (the helper defaults to `kokoro`).
-   - Fewer than two profiles? Stop and ask the user to create two in Voicebox → Voices, then rerun.
+   - Fewer than two profiles and `create_profile` unavailable (desktop app)? Stop and ask the user to create two in Voicebox → Voices, then rerun.
 
 2. **Get the source.**
    - File path → read it with the Read tool.

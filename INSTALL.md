@@ -22,6 +22,7 @@ without `Authorization: Bearer <key>`.
 ```sh
 bash verify-cli.sh        # builds dist/vocald.rb from the working tree and tests it
 # or manually (Homebrew requires formulas to live in a tap):
+mkdir -p dist
 tar czf dist/vocald.tar.gz --exclude .git --exclude dist -C . .
 sed -e "s|@TARBALL@|$PWD/dist/vocald.tar.gz|" \
     -e "s|@SHA256@|$(shasum -a 256 dist/vocald.tar.gz | awk '{print $1}')|" \

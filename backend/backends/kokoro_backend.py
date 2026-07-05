@@ -192,6 +192,7 @@ class KokoroTTSBackend:
                 "paths or unset them to auto-download into the data dir. "
                 "Files: github.com/thewh1teagle/kokoro-onnx/releases."
             )
+        import shutil
         import urllib.error
         import urllib.request
 
@@ -206,7 +207,10 @@ class KokoroTTSBackend:
             logger.info("Downloading %s -> %s", url, dest)
             tmp = f"{dest}.part"
             try:
-                urllib.request.urlretrieve(url, tmp)  # noqa: S310 — pinned https URLs
+                # timeout so a stalled connection can't hang the first
+                # generation forever; the HTTPError path stays loud
+                with urllib.request.urlopen(url, timeout=60) as resp, open(tmp, "wb") as fh:  # noqa: S310 — pinned https URLs
+                    shutil.copyfileobj(resp, fh)
                 os.replace(tmp, dest)
             except urllib.error.HTTPError as exc:
                 raise RuntimeError(

@@ -6,7 +6,7 @@
 # Never published anywhere.
 class Vocald < Formula
   desc "Headless TTS/STT server (REST + MCP): Kokoro on onnxruntime, Whisper on CTranslate2"
-  homepage "https://github.com/jamiepine/voicebox"
+  homepage "https://github.com/danylo-dudok/vocald"
   url "file://@TARBALL@"
   sha256 "@SHA256@"
   version "0.6.0"

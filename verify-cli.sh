@@ -29,7 +29,7 @@ TAP_DIR="$(brew --repository)/Library/Taps/vocald/homebrew-local"
 cleanup() {
   [ -n "$SERVER_PID" ] && kill "$SERVER_PID" 2>/dev/null && wait "$SERVER_PID" 2>/dev/null
   brew uninstall vocald/local/vocald >/dev/null 2>&1 || brew uninstall vocald >/dev/null 2>&1
-  rm -rf "$TAP_DIR" "$TMPDATA" "$TMP"
+  rm -rf "$(dirname "$TAP_DIR")" "$TMPDATA" "$TMP"
   echo "── cleanup done (server stopped, formula uninstalled, tap + temp data removed)"
 }
 trap cleanup EXIT
@@ -61,8 +61,8 @@ elif [ -d "$CELLAR" ] && grep -q "Failed to fix install linkage" "$TMP/brew-inst
   brew link --overwrite vocald >/dev/null 2>&1
   ok "brew install completed (tolerated known wheel-dylib relocation failure)"
   VENV_PY="$(echo "$CELLAR"/*/libexec/bin/python)"
-  if "$VENV_PY" -c "import av" 2>/dev/null; then
-    ok "un-relocated PyAV dylibs import cleanly"
+  if "$VENV_PY" -c "import av, ctranslate2" 2>/dev/null; then
+    ok "un-relocated PyAV + ctranslate2 dylibs import cleanly"
   else
     bad "PyAV import broken after relocation failure — real breakage"
     echo "RESULT: ${PASS} passed, ${FAIL} failed"; exit 1
