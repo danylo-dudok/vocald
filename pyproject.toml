@@ -1,0 +1,28 @@
+# Packaging for the vocald distribution (brew / pip). Lint & pytest config
+# lives in backend/pyproject.toml; docker installs from backend/requirements.txt
+# directly and never reads this file.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vocald"
+version = "0.6.0"
+description = "vocald — headless TTS/STT server (REST + MCP): Kokoro on onnxruntime, Whisper on CTranslate2"
+readme = "INSTALL.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["backend/requirements.txt"] }
+
+[project.scripts]
+vocald-server = "backend.cli:main"
+# ponytail: legacy alias — same entrypoint, keeps older docs/scripts working
+voicebox-server = "backend.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["backend", "backend.*"]
+exclude = ["backend.tests", "backend.tests.*"]

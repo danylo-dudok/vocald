@@ -1,0 +1,46 @@
+# Version control
+.git
+.github
+.gitignore
+
+# Build helpers not needed inside the image
+scripts/
+# ...but the runtime entrypoint lives there
+!scripts/rocm-entrypoint.sh
+
+# Python build artifacts (rebuilt in Docker)
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Data (volume-mounted at runtime)
+data/
+backend/data/
+
+# Tests and packaging don't belong in the runtime image
+backend/tests/
+packaging/
+verify.sh
+verify-cli.sh
+baseline.txt
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Secrets — never ship the key file into a build context
+.env
+
+# Docs & meta not needed in container
+CONTRIBUTING.md
+SECURITY.md
+LICENSE
+README.md
+backend/README.md

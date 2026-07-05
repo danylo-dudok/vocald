@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+build/
+
+# Runtime data (never commit user data or models)
+data/*
+!data/.gitkeep
+!data/cache/.gitkeep
+*.wav
+*.mp3
+
+# Packaging artifacts
+dist/
+
+# Secrets
+.env
+
+# Agent/session state
+.claude/
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+.DS_Store

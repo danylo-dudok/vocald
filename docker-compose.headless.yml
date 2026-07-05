@@ -1,0 +1,44 @@
+# Voicebox headless — API + /mcp only, bearer-key auth, no UI.
+#   1. export VOICEBOX_API_KEY=$(openssl rand -hex 24)
+#      (or: cp env.example .env and set the key there)
+#   2. docker compose -f docker-compose.headless.yml up -d --build
+#
+# Host binding stays on 127.0.0.1 — put a TLS reverse proxy in front
+# before exposing this beyond localhost.
+
+services:
+  voicebox:
+    build:
+      context: .
+      dockerfile: Dockerfile.headless
+    container_name: voicebox-headless
+    restart: unless-stopped
+
+    ports:
+      # 17600 host-side so a desktop Voicebox can keep its native 17493.
+      - "127.0.0.1:${VOICEBOX_HOST_PORT:-17600}:17493"
+
+    environment:
+      # :? makes compose refuse to start without a key — deny by default.
+      - VOICEBOX_API_KEY=${VOICEBOX_API_KEY:?set VOICEBOX_API_KEY in .env}
+      - LOG_LEVEL=info
+      - NUMBA_CACHE_DIR=/tmp/numba_cache
+
+    volumes:
+      # Profiles DB + generated audio (persists across restarts)
+      - voicebox-headless-data:/app/data
+      # HF model cache (so TTS models aren't re-downloaded)
+      - voicebox-headless-hf:/home/voicebox/.cache/huggingface
+
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          # Sized for kokoro (82M params) + whisper-base on CPU (~350MiB
+          # measured). Raise for whisper medium/large (CT2 needs 1.5GiB+);
+          # the LLM personality feature is not in this image at all.
+          memory: 2G
+
+volumes:
+  voicebox-headless-data:
+  voicebox-headless-hf:

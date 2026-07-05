@@ -1,0 +1,33 @@
+# FastAPI and server
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+
+# Database
+sqlalchemy>=2.0.0
+alembic>=1.13.0
+
+# Inference — torch-free slim stack:
+#   Kokoro TTS on onnxruntime (int8 model baked into the image)
+#   Whisper STT on CTranslate2 (downloads into the HF cache on first use)
+# LLM personality features are NOT available in this image (they need
+# torch + transformers) — the API returns a clear error if requested.
+kokoro-onnx>=0.4.9
+faster-whisper>=1.1.0
+huggingface_hub>=0.20.0
+
+# Audio processing — numpy 2.0.x window: kokoro-onnx needs >=2.0.2,
+# numba 0.60 caps at <2.1
+librosa>=0.10.2
+soundfile>=0.12.0
+numpy>=2.0.2,<2.1
+numba>=0.60.0,<0.61.0
+pedalboard>=0.9.14
+
+# MCP server (Model Context Protocol)
+fastmcp>=3.0,<4.0
+sse-starlette>=2.0
+
+# Utilities
+python-multipart>=0.0.6
+Pillow>=10.0.0

@@ -1,0 +1,86 @@
+# ============================================================
+# Voicebox — headless API-only build (no web UI, no desktop)
+# 2-stage build: Python deps → Runtime. Torch-free: Kokoro TTS
+# runs on onnxruntime (int8), Whisper on CTranslate2.
+#
+# The frontend stage from the original desktop Dockerfile is
+# intentionally absent: backend serves JSON at / and the API + /mcp.
+#
+#   docker compose -f docker-compose.headless.yml up -d --build
+# ============================================================
+
+# === Stage 1: Build Python dependencies ===
+FROM python:3.11-slim AS backend-builder
+
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir --upgrade pip
+
+COPY backend/requirements.txt .
+
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+
+# === Stage 2: Runtime ===
+FROM python:3.11-slim
+
+RUN groupadd -r voicebox && \
+    useradd -r -g voicebox -m -s /bin/bash voicebox
+
+WORKDIR /app
+
+# No apt ffmpeg (~340MB): faster-whisper decodes all formats via its
+# bundled PyAV; soundfile covers wav/flac/ogg for load_audio. Only the
+# audioread mp3/m4a fallback (story imports, duration of compressed
+# uploads) would need the CLI — degraded deliberately in the slim image.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gosu \
+    libatomic1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=backend-builder /install /usr/local
+
+# Bake the Kokoro ONNX model + voices BEFORE the code copy so backend
+# edits don't re-download ~115MB of release assets.
+# ponytail: pinned GitHub release assets; if they move, the HF mirror is
+# onnx-community/Kokoro-82M-v1.0-ONNX.
+RUN mkdir -p /app/models/kokoro \
+    && curl -fSL -o /app/models/kokoro/kokoro.onnx \
+       https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx \
+    && curl -fSL -o /app/models/kokoro/voices.bin \
+       https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin \
+    && chown -R voicebox:voicebox /app/models
+ENV VOICEBOX_KOKORO_ONNX_MODEL=/app/models/kokoro/kokoro.onnx \
+    VOICEBOX_KOKORO_ONNX_VOICES=/app/models/kokoro/voices.bin
+
+COPY --chown=voicebox:voicebox backend/ /app/backend/
+
+# NO frontend copy — this is the headless image.
+
+RUN mkdir -p /app/data/generations /app/data/profiles /app/data/cache \
+    && chown -R voicebox:voicebox /app/data
+
+# Pre-create the HF cache dir (whisper downloads land here) so the named
+# volume mounted over it inherits voicebox ownership instead of root.
+RUN mkdir -p /home/voicebox/.cache/huggingface \
+    && chown -R voicebox:voicebox /home/voicebox/.cache
+
+# Fail closed: with this set, a missing/empty VOICEBOX_API_KEY means every
+# request gets 401 instead of an unauthenticated server.
+ENV VOICEBOX_REQUIRE_AUTH=1
+
+EXPOSE 17493
+
+# Every route is authenticated, /health included — the check sends the
+# bearer from the container's own environment (shell form expands it).
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
+    CMD curl -fsS -H "Authorization: Bearer $VOICEBOX_API_KEY" http://localhost:17493/health || exit 1
+
+COPY --chmod=755 scripts/rocm-entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "17493"]

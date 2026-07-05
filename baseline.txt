@@ -1,0 +1,7 @@
+captured=2026-07-05T09:35:55Z
+image=voicebox-voicebox (torch 2.12.1+cu130, pre-optimization)
+image_size_mb=7406
+gen_status=completed
+gen_wall_s=2.2
+rss_after_gen_mib=2171
+text="Headless verification check, one two three." (cold model load included)
